@@ -12,14 +12,14 @@ fn main() {
     #[cfg(debug_assertions)]
     {
         let env_filter =
-            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("CatBlast=debug"));
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("a_bevy_of_us=debug"));
 
         tracing_subscriber::fmt().with_env_filter(env_filter).init();
     }
     #[cfg(not(debug_assertions))]
     {
         let file = std::fs::File::create("game.log").expect("Failed to create log file");
-        let env_filter = EnvFilter::new("catblast=info");
+        let env_filter = EnvFilter::new("a_bevy_of_us=info");
 
         tracing_subscriber::fmt()
             .with_writer(file)

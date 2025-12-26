@@ -28,7 +28,7 @@ pub fn setup_main_menu(
             OnMainMenuScreen,
             |parent| {
                 // 游戏标题
-                parent.spawn(text_styled("Cat Blast", TextLevel::H1, &theme, &asset_server));
+                parent.spawn(text_styled("A Bevy Of Us", TextLevel::H1, &theme, &asset_server));
 
                 // 创建按钮并添加到 builder
                 let play_button = crate::plugins::ui::button_builder::spawn_button_sized(

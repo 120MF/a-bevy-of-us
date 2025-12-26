@@ -3,6 +3,17 @@
 version = 4
 
 [[package]]
+name = "a-bevy-of-us"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "leafwing-input-manager",
+ "rand",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "ab_glyph"
 version = "0.2.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -326,17 +337,6 @@ checksum = "76d3ee8652fe0577fd8a99054e147740850140d530be8e044a9be4e23a3e8a24"
 dependencies = [
  "bevy_dylib",
  "bevy_internal",
-]
-
-[[package]]
-name = "bevy-of-us"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "leafwing-input-manager",
- "rand",
- "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
