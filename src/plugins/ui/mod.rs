@@ -2,6 +2,7 @@ use crate::plugins::ui::main_menu::MainMenuPlugin;
 use crate::plugins::ui::navigation::NavigationGraph;
 use crate::plugins::ui::overlays::OverlayPlugin;
 use crate::plugins::ui::resources::MenuStack;
+use crate::plugins::ui::styles::Theme;
 use crate::plugins::ui::systems::menu_stack_control_system;
 use crate::plugins::ui::systems::navigation::{
     ButtonStyleResource, cleanup_despawned_buttons, handle_navigation_input,
@@ -18,8 +19,9 @@ pub mod main_menu;
 pub mod navigation;
 pub mod overlays;
 mod resources;
-mod styles;
+pub mod styles;
 pub mod systems;
+pub mod ui_builders;
 
 pub struct UiPlugin;
 impl Plugin for UiPlugin {
@@ -28,10 +30,12 @@ impl Plugin for UiPlugin {
             .init_resource::<MenuStack>()
             .init_resource::<NavigationGraph>()
             .init_resource::<ButtonStyleResource>()
+            .init_resource::<Theme>()
             .add_plugins(InputDispatchPlugin)
             .add_plugins(DirectionalNavigationPlugin)
             .add_plugins(OverlayPlugin)
             .add_plugins(MainMenuPlugin)
+            .add_systems(Startup, setup_theme_resources)
             .add_systems(Update, menu_stack_control_system)
             .add_systems(
                 Update,
@@ -42,4 +46,12 @@ impl Plugin for UiPlugin {
                 ),
             );
     }
+}
+
+/// 同步Theme的按钮样式到ButtonStyleResource
+fn setup_theme_resources(
+    theme: Res<Theme>,
+    mut button_style: ResMut<ButtonStyleResource>,
+) {
+    button_style.0 = theme.button.clone();
 }

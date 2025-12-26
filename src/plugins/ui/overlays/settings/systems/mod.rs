@@ -1,7 +1,8 @@
 use crate::plugins::core::messages::ApplyDisplaySettingsMessage;
 use crate::plugins::core::resources::{DisplaySettings, Resolution};
 use crate::plugins::ui::button_builder::{
-    ButtonNavigationBuilder, NavigationLayout, create_button_node, spawn_button,
+    spawn_button_sized, spawn_themed_button, ButtonNavigationBuilder, ButtonSize,
+    NavigationLayout,
 };
 use crate::plugins::ui::components::Selected;
 use crate::plugins::ui::navigation::NavigationGraph;
@@ -9,6 +10,8 @@ use crate::plugins::ui::overlays::settings::components::{
     OnSettingsScreen, SettingsButtonAction, WindowModeLabel,
 };
 use crate::plugins::ui::overlays::{OverlayAction, OverlayMessage};
+use crate::plugins::ui::styles::{Theme, ThemeSpacing};
+use crate::plugins::ui::ui_builders::{spacer_themed, text_styled, ContainerBuilder, TextLevel};
 use crate::state::OverlayState;
 use bevy::prelude::*;
 use bevy::window::{MonitorSelection, WindowMode};
@@ -38,14 +41,10 @@ fn get_resolution_by_flat_index(
 pub fn setup_settings_ui(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
+    theme: Res<Theme>,
     display_settings: Res<DisplaySettings>,
     mut nav_graph: ResMut<NavigationGraph>,
 ) {
-    let font = TextFont {
-        font: asset_server.load("fonts/AlibabaPuHuiTi-3-65-Medium.ttf"),
-        ..default()
-    };
-
     let mut flat_resolutions: Vec<Resolution> = Vec::new();
     for monitor in &display_settings.monitor_infos {
         for &res in &monitor.resolutions {
@@ -63,60 +62,36 @@ pub fn setup_settings_ui(
     let mut selected_buttons = Vec::new();
 
     // Root node
-    commands
-        .spawn((
-            Node {
-                width: percent(100.0),
-                height: percent(100.0),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                flex_direction: FlexDirection::Column,
-                ..default()
-            },
-            OnSettingsScreen,
-        ))
-        .with_children(|parent| {
+    ContainerBuilder::root()
+        .gap_themed(ThemeSpacing::SM, &theme)
+        .spawn_with(&mut commands, OnSettingsScreen, |parent| {
             // Title
-            parent.spawn((
-                Text::new("设置"),
-                font.clone(),
-                TextColor(Color::WHITE),
-                TextLayout::new_with_justify(Justify::Center),
-            ));
+            parent.spawn(text_styled("设置", TextLevel::H1, &theme, &asset_server));
 
             // Spacing
-            parent.spawn(Node {
-                height: px(20.0),
-                ..default()
-            });
+            parent.spawn(spacer_themed(&theme, ThemeSpacing::MD));
 
             // Resolution section
-            parent.spawn((
-                Text::new("分辨率："),
-                font.clone(),
-                TextColor(Color::WHITE),
-                TextLayout::new_with_justify(Justify::Center),
+            parent.spawn(text_styled(
+                "分辨率：",
+                TextLevel::H3,
+                &theme,
+                &asset_server,
             ));
 
             // Resolution buttons
             for (index, resolution) in flat_resolutions.iter().enumerate() {
                 let is_selected = *resolution == display_settings.current_resolution;
 
-                let button_entity = parent
-                    .spawn((
-                        Button,
-                        create_button_node(250.0, 50.0, 5.0),
-                        BackgroundColor(Color::BLACK), // Will be managed by universal_button_style_system
-                        SettingsButtonAction::SelectResolution(index),
-                    ))
-                    .with_children(|button| {
-                        button.spawn((
-                            Text::new(resolution.to_string()),
-                            font.clone(),
-                            TextLayout::new_with_justify(Justify::Center),
-                        ));
-                    })
-                    .id();
+                let button_entity = spawn_themed_button(
+                    parent,
+                    &resolution.to_string(),
+                    SettingsButtonAction::SelectResolution(index),
+                    &theme,
+                    &asset_server,
+                    250.0,
+                    50.0,
+                );
 
                 // Track if this button should be marked as selected
                 if is_selected {
@@ -127,45 +102,43 @@ pub fn setup_settings_ui(
             }
 
             // Spacing
-            parent.spawn(Node {
-                height: px(20.0),
-                ..default()
-            });
+            parent.spawn(spacer_themed(&theme, ThemeSpacing::MD));
 
             // Window mode section
             parent.spawn((
-                Text::new(format!(
-                    "窗口模式: {}",
-                    window_mode_to_chinese(display_settings.window_mode)
-                )),
-                font.clone(),
-                TextColor(Color::WHITE),
-                TextLayout::new_with_justify(Justify::Center),
+                text_styled(
+                    format!(
+                        "窗口模式: {}",
+                        window_mode_to_chinese(display_settings.window_mode)
+                    ),
+                    TextLevel::H3,
+                    &theme,
+                    &asset_server,
+                ),
                 WindowModeLabel,
             ));
 
-            let toggle_button = spawn_button(
+            let toggle_button = spawn_button_sized(
                 parent,
                 "切换窗口模式",
                 SettingsButtonAction::ToggleWindowMode,
-                &font,
-                create_button_node(250.0, 50.0, 10.0),
+                &theme,
+                &asset_server,
+                ButtonSize::Medium,
             );
             button_builder.add_button(toggle_button);
 
             // Spacing
-            parent.spawn(Node {
-                height: px(20.0),
-                ..default()
-            });
+            parent.spawn(spacer_themed(&theme, ThemeSpacing::MD));
 
             // Back button
-            let back_button = spawn_button(
+            let back_button = spawn_button_sized(
                 parent,
                 "返回",
                 SettingsButtonAction::Back,
-                &font,
-                create_button_node(250.0, 50.0, 10.0),
+                &theme,
+                &asset_server,
+                ButtonSize::Medium,
             );
             button_builder.add_button(back_button);
         });

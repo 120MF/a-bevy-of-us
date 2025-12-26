@@ -1,5 +1,6 @@
 use crate::plugins::ui::components::{Focusable, Focused};
 use crate::plugins::ui::navigation::{NavigationGraph, NavigationNeighbors};
+use crate::plugins::ui::styles::Theme;
 use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::prelude::*;
 
@@ -180,6 +181,7 @@ pub fn create_button_node(width: f32, height: f32, margin: f32) -> Node {
 }
 
 /// Helper function to spawn a button with standard components
+#[deprecated(note = "Use spawn_button_sized or spawn_themed_button instead")]
 pub fn spawn_button<T: Component>(
     parent: &mut RelatedSpawnerCommands<ChildOf>,
     text: &str,
@@ -198,4 +200,82 @@ pub fn spawn_button<T: Component>(
         })
         .id();
     button_entity
+}
+
+// === 主题化按钮系统 ===
+
+/// 按钮尺寸预设
+#[derive(Clone, Copy, Debug)]
+pub enum ButtonSize {
+    Small,  // 200x40
+    Medium, // 250x50
+    Large,  // 250x65
+    Custom(f32, f32),
+}
+
+impl ButtonSize {
+    pub fn dimensions(&self) -> (f32, f32) {
+        match self {
+            ButtonSize::Small => (200.0, 40.0),
+            ButtonSize::Medium => (250.0, 50.0),
+            ButtonSize::Large => (250.0, 65.0),
+            ButtonSize::Custom(w, h) => (*w, *h),
+        }
+    }
+}
+
+/// 增强的按钮spawn函数，从主题获取样式
+pub fn spawn_themed_button<T: Component>(
+    parent: &mut RelatedSpawnerCommands<ChildOf>,
+    text: &str,
+    action: T,
+    theme: &Theme,
+    asset_server: &AssetServer,
+    width: f32,
+    height: f32,
+) -> Entity {
+    let font = TextFont {
+        font: asset_server.load(&theme.typography.font_path),
+        font_size: theme.typography.size_body,
+        ..default()
+    };
+
+    let node = Node {
+        width: Val::Px(width),
+        height: Val::Px(height),
+        margin: UiRect::all(Val::Px(theme.spacing.sm)),
+        justify_content: JustifyContent::Center,
+        align_items: AlignItems::Center,
+        ..default()
+    };
+
+    parent
+        .spawn((
+            Button,
+            node,
+            BackgroundColor(theme.button.normal),
+            action,
+        ))
+        .with_children(|button| {
+            button.spawn((
+                Text::new(text),
+                font,
+                TextColor(theme.colors.text_primary),
+                TextLayout::new_with_justify(Justify::Center),
+            ));
+        })
+        .id()
+}
+
+/// 使用预设尺寸spawn按钮
+pub fn spawn_button_sized<T: Component>(
+    parent: &mut RelatedSpawnerCommands<ChildOf>,
+    text: &str,
+    action: T,
+    theme: &Theme,
+    asset_server: &AssetServer,
+    size: ButtonSize,
+) -> Entity {
+    let (width, height) = size.dimensions();
+    spawn_themed_button(parent, text, action, theme, asset_server, width, height)
 }

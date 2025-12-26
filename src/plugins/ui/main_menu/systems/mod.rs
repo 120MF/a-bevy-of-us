@@ -1,22 +1,19 @@
-use crate::plugins::ui::button_builder::{
-    ButtonNavigationBuilder, NavigationLayout, create_button_node, spawn_button,
-};
+use crate::plugins::ui::button_builder::{ButtonNavigationBuilder, ButtonSize, NavigationLayout};
 use crate::plugins::ui::main_menu::components::{MainMenuButtonAction, OnMainMenuScreen};
 use crate::plugins::ui::navigation::NavigationGraph;
 use crate::plugins::ui::overlays::{OverlayAction, OverlayMessage};
+use crate::plugins::ui::styles::{Theme, ThemeSpacing};
+use crate::plugins::ui::ui_builders::{text_styled, ContainerBuilder, TextLevel};
 use crate::state::{GameState, OverlayState};
 use bevy::prelude::*;
 
 pub fn setup_main_menu(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
+    theme: Res<Theme>,
     mut nav_graph: ResMut<NavigationGraph>,
 ) {
     commands.spawn((Camera2d, OnMainMenuScreen));
-    let font = TextFont {
-        font: asset_server.load("fonts/AlibabaPuHuiTi-3-65-Medium.ttf"),
-        ..default()
-    };
 
     // Clear previous navigation graph
     nav_graph.clear();
@@ -24,55 +21,47 @@ pub fn setup_main_menu(
     // Create button builder
     let mut button_builder = ButtonNavigationBuilder::new(NavigationLayout::Vertical);
 
-    commands
-        .spawn((
-            Node {
-                width: percent(100.0),
-                height: percent(100.0),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                flex_direction: FlexDirection::Column,
-                ..default()
-            },
+    ContainerBuilder::root()
+        .gap_themed(ThemeSpacing::MD, &theme)
+        .spawn_with(
+            &mut commands,
             OnMainMenuScreen,
-        ))
-        .with_children(|builder| {
-            // 游戏标题
-            builder.spawn((
-                Text::new("Cat Blast"),
-                font.clone(),
-                TextColor(Color::WHITE),
-                TextLayout::new_with_justify(Justify::Center),
-            ));
+            |parent| {
+                // 游戏标题
+                parent.spawn(text_styled("Cat Blast", TextLevel::H1, &theme, &asset_server));
 
-            // 创建按钮并添加到 builder
-            let play_button = spawn_button(
-                builder,
-                "开始游戏",
-                MainMenuButtonAction::Play,
-                &font,
-                create_button_node(250.0, 65.0, 10.0),
-            );
-            button_builder.add_button(play_button);
+                // 创建按钮并添加到 builder
+                let play_button = crate::plugins::ui::button_builder::spawn_button_sized(
+                    parent,
+                    "开始游戏",
+                    MainMenuButtonAction::Play,
+                    &theme,
+                    &asset_server,
+                    ButtonSize::Large,
+                );
+                button_builder.add_button(play_button);
 
-            let settings_button = spawn_button(
-                builder,
-                "设置",
-                MainMenuButtonAction::Settings,
-                &font,
-                create_button_node(250.0, 65.0, 10.0),
-            );
-            button_builder.add_button(settings_button);
+                let settings_button = crate::plugins::ui::button_builder::spawn_button_sized(
+                    parent,
+                    "设置",
+                    MainMenuButtonAction::Settings,
+                    &theme,
+                    &asset_server,
+                    ButtonSize::Large,
+                );
+                button_builder.add_button(settings_button);
 
-            let quit_button = spawn_button(
-                builder,
-                "退出",
-                MainMenuButtonAction::Quit,
-                &font,
-                create_button_node(250.0, 65.0, 10.0),
-            );
-            button_builder.add_button(quit_button);
-        });
+                let quit_button = crate::plugins::ui::button_builder::spawn_button_sized(
+                    parent,
+                    "退出",
+                    MainMenuButtonAction::Quit,
+                    &theme,
+                    &asset_server,
+                    ButtonSize::Large,
+                );
+                button_builder.add_button(quit_button);
+            },
+        );
 
     // Build navigation graph and set initial focus
     button_builder.build(&mut commands, &mut nav_graph, true);
